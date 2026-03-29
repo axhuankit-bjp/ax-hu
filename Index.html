@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My CRM Pro</title>
+  <style>
+    body { font-family: Arial; background: #0f172a; color: white; margin: 0; }
+    header { padding: 20px; text-align: center; font-size: 24px; }
+    .container { padding: 20px; }
+    input, select, button {
+      padding: 10px; margin: 5px; border-radius: 8px; border: none;
+    }
+    button { background: #22c55e; color: white; cursor: pointer; }
+    .danger { background: #ef4444; }
+    table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid #334155; text-align: left; }
+    .status-new { color: #38bdf8; }
+    .status-contacted { color: #facc15; }
+    .status-closed { color: #22c55e; }
+    .topbar { display:flex; justify-content:space-between; flex-wrap:wrap; }
+  </style>
+</head>
+<body>
+
+<header>🚀 My CRM Pro</header>
+
+<div class="container">
+  <div class="topbar">
+    <div>
+      <input id="name" placeholder="Name">
+      <input id="phone" placeholder="Phone">
+      <select id="status">
+        <option value="new">New</option>
+        <option value="contacted">Contacted</option>
+        <option value="closed">Closed</option>
+      </select>
+      <input type="date" id="followup">
+      <button onclick="addLead()">Add Lead</button>
+    </div>
+
+    <div>
+      <input id="search" placeholder="Search..." onkeyup="renderLeads()">
+      <select id="filter" onchange="renderLeads()">
+        <option value="all">All</option>
+        <option value="new">New</option>
+        <option value="contacted">Contacted</option>
+        <option value="closed">Closed</option>
+      </select>
+    </div>
+  </div>
+
+  <h3 id="stats"></h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Status</th>
+        <th>Follow-up</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="leadsTable"></tbody>
+  </table>
+</div>
+
+<script>
+  let leads = JSON.parse(localStorage.getItem('leads')) || [];
+  let editIndex = -1;
+
+  function saveLeads() {
+    localStorage.setItem('leads', JSON.stringify(leads));
+  }
+
+  function addLead() {
+    const name = document.getElementById('name').value;
+    const phone = document.getElementById('phone').value;
+    const status = document.getElementById('status').value;
+    const followup = document.getElementById('followup').value;
+
+    if (!name || !phone) return alert('Fill all fields');
+
+    if (editIndex === -1) {
+      leads.push({ name, phone, status, followup });
+    } else {
+      leads[editIndex] = { name, phone, status, followup };
+      editIndex = -1;
+    }
+
+    saveLeads();
+    renderLeads();
+
+    document.getElementById('name').value = '';
+    document.getElementById('phone').value = '';
+    document.getElementById('followup').value = '';
+  }
+
+  function editLead(index) {
+    const lead = leads[index];
+    document.getElementById('name').value = lead.name;
+    document.getElementById('phone').value = lead.phone;
+    document.getElementById('status').value = lead.status;
+    document.getElementById('followup').value = lead.followup;
+    editIndex = index;
+  }
+
+  function deleteLead(index) {
+    if (!confirm('Delete this lead?')) return;
+    leads.splice(index, 1);
+    saveLeads();
+    renderLeads();
+  }
+
+  function renderLeads() {
+    const table = document.getElementById('leadsTable');
+    const search = document.getElementById('search').value.toLowerCase();
+    const filter = document.getElementById('filter').value;
+
+    table.innerHTML = '';
+
+    let filtered = leads.filter(l => {
+      return (
+        (filter === 'all' || l.status === filter) &&
+        (l.name.toLowerCase().includes(search) || l.phone.includes(search))
+      );
+    });
+
+    let newCount = leads.filter(l => l.status === 'new').length;
+    let contactedCount = leads.filter(l => l.status === 'contacted').length;
+    let closedCount = leads.filter(l => l.status === 'closed').length;
+
+    document.getElementById('stats').innerText = `Total: ${leads.length} | New: ${newCount} | Contacted: ${contactedCount} | Closed: ${closedCount}`;
+
+    filtered.forEach((lead, index) => {
+      table.innerHTML += `
+        <tr>
+          <td>${lead.name}</td>
+          <td>${lead.phone}</td>
+          <td class="status-${lead.status}">${lead.status}</td>
+          <td>${lead.followup || '-'}</td>
+          <td>
+            <button onclick="editLead(${index})">Edit</button>
+            <button class="danger" onclick="deleteLead(${index})">Delete</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  renderLeads();
+</script>
+
+</body>
+          </html>
+          
